@@ -38,8 +38,8 @@ public class CityController {
     }
 
     @GetMapping("/time/{name}")
-    public TimeInfo getCityTimeInfoByCountry(@PathVariable String name) {
-        logger.info("getCityTimeInfoByCountry был вызван");
+    public TimeInfo getCityTimeInfoByName(@PathVariable String name) {
+        logger.info("getCityTimeInfoByName был вызван");
         return cityService.getCityTimeInfoByName(name);
     }
 }
