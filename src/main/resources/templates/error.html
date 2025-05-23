@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <style>
+        body {
+            background-color: #f8f8f8;
+            color: #333;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .error-container {
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 24px;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        .error-image {
+            width: 100%;
+            max-width: 500px;
+            transition: transform 1s;
+        }
+
+        @keyframes rotateThreeTimes {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(1080deg); } /* 360 * 3 */
+        }
+
+        .rotate {
+            animation: rotateThreeTimes 2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+<div class="error-container">
+    <img src="/mistake.jpeg" alt="Error Image" class="error-image" id="errorImage">
+    <h1>Все упало!</h1>
+    <p>Зря вы сюда жмакнули</p>
+    <a href="/">Return to Home</a>
+</div>
+
+<script>
+    window.addEventListener('load', () => {
+        const img = document.getElementById('errorImage');
+        img.classList.add('rotate');
+    });
+</script>
+</body>
+</html>

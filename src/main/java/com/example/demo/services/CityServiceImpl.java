@@ -1,8 +1,12 @@
 package com.example.demo.services;
 
+import com.example.demo.exceptions.IncorrectInputException;
 import com.example.demo.model.CityInfo;
 import com.example.demo.model.TimeInfo;
+import com.example.demo.services.interfaces.CityService;
+import com.example.demo.services.interfaces.UnsplashService;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -14,30 +18,37 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
+@RequiredArgsConstructor
 public class CityServiceImpl implements CityService {
+    private final UnsplashService unsplashService;
+
     private final List<CityInfo> cities = new ArrayList<>();
 
     @PostConstruct
     public void init() {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(
-                        getClass()
+                        Objects.requireNonNull(getClass()
                                 .getClassLoader()
-                                .getResourceAsStream("cities.csv"),
+                                .getResourceAsStream("cities.csv")),
                         StandardCharsets.UTF_8))) {
             String line;
             reader.readLine(); // пропустить заголовок
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length == 5) {
+                if (parts.length == 6) {
                     cities.add(new CityInfo(
                             parts[0],
                             parts[1],
                             Double.parseDouble(parts[2]),
                             Double.parseDouble(parts[3]),
-                            new TimeInfo(parts[4], null, null, null)
+                            new TimeInfo(parts[4], null, null, null),
+                            Long.parseLong(parts[5]),
+                            null,
+                            new byte[]{}
                     ));
                 }
             }
@@ -48,8 +59,9 @@ public class CityServiceImpl implements CityService {
 
     public CityInfo getCityByName(String name) {
         return cities.stream()
-                .filter(c -> c.getCity().equalsIgnoreCase(name))
+                .filter(c -> c.getName().equalsIgnoreCase(name))
                 .map(this::enrichCityWithTime)
+                .map(this::enrichCityWithImage)
                 .findFirst()
                 .orElse(null);
     }
@@ -69,11 +81,35 @@ public class CityServiceImpl implements CityService {
     @Override
     public TimeInfo getCityTimeInfoByName(String name) {
         return cities.stream()
-                .filter(c -> c.getCity().equalsIgnoreCase(name))
+                .filter(c -> c.getName().equalsIgnoreCase(name))
                 .map(this::enrichCityWithTime)
                 .findFirst()
                 .map(CityInfo::getTimeInfo)
                 .orElse(null);
+    }
+
+    @Override
+    public List<CityInfo> searchCities(String query) throws IncorrectInputException {
+        if (query.isEmpty()) {
+            return cities.stream()
+                    .map(this::enrichCityWithTime)
+                    .toList();
+        }
+        if (!isValidQuery(query)) {
+            throw new IncorrectInputException("Некорректный запрос, попробуйте еще разок");
+        }
+
+        return cities.stream()
+                .filter(c ->
+                        c.getName().contains(query) || c.getCountry().contains(query)
+                )
+                .map(this::enrichCityWithTime)
+                .toList();
+    }
+
+    private boolean isValidQuery(String query) {
+        String regex = "^[\\p{L}][\\p{L} .'-]{0,98}[\\p{L}]$";
+        return query != null && query.matches(regex);
     }
 
     private List<CityInfo> enrichCitiesWithTime(List<CityInfo> cityList) {
@@ -96,4 +132,19 @@ public class CityServiceImpl implements CityService {
         }
         return city;
     }
+
+    private CityInfo enrichCityWithImage(CityInfo city) {
+        if (city.getImageUrl() == null || city.getImageUrl().isEmpty()) {
+            String imageUrl = unsplashService.getCityImageUrl(city.getName());
+            if (imageUrl != null) {
+                city.setImageUrl(imageUrl);
+            }
+        }
+        if (city.getImageUrl() != null && city.getImageData().length == 0) {
+            byte[] image = unsplashService.fetchCityImage(city.getImageUrl());
+            city.setImageData(image);
+        }
+        return city;
+    }
+
 }

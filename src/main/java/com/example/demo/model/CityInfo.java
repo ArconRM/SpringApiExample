@@ -8,9 +8,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CityInfo {
-    private String city;
+    private String name;
     private String country;
     private double latitude;
     private double longitude;
     private TimeInfo timeInfo;
+    private long population; // население города
+
+    private String imageUrl; // URL изображения города
+    private byte[] imageData; // само изображение;
 }
